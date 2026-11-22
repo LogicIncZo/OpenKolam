@@ -11,6 +11,19 @@ pairs with this one).
 
 Milestones track releases on GitHub; this file is the narrative view.
 
+## Release process — the milestone gate
+
+- All work lands on `dev` through PRs from feature branches
+  (`feat/…`, `fix/…`, `chore/…`); CI (`npm run build && npm test`) must be
+  green before a feature PR merges into `dev`.
+- **`dev` → `main` is a human-reviewed milestone gate.** One release PR per
+  milestone, reviewed and merged by a human — agents and automation must
+  never merge, push, or fast-forward `main` (a branch ruleset enforces the
+  PR-only flow). Merging the release PR deploys the site (GitHub Pages);
+  tag `vX.Y.Z` on `main` for the release.
+- A milestone is ready for human review when every issue in it is closed on
+  `dev` and CI parity passes.
+
 ## v0.1.0 — next
 
 - [ ] **Ink selection & move** — decoration strokes are selectable but

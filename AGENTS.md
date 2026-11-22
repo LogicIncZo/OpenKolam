@@ -63,6 +63,12 @@ Run before finishing any task:
    triggers its publish workflow to GitHub Packages); the app must build and
    pass tests against the pinned `^` version in `package.json`.
 4. Commit only what the task asks.
+5. **Branch model & milestone gate.** Work lands on `dev` only via PRs from
+   feature branches (`feat/…`, `fix/…`, `chore/…`), CI green before merge.
+   Never merge, push, or fast-forward `main`: `dev`→`main` is the
+   **human-reviewed milestone gate** — one release PR per milestone, merged
+   by a human, then tagged (see ROADMAP "Release process"). Automation stops
+   at the PR into `dev`.
 
 ## Conventions
 
