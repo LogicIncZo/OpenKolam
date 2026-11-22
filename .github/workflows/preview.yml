@@ -1,0 +1,173 @@
+name: Preview (per PR)
+
+# Per-PR deploy previews on GitHub Pages: every pull request builds the app
+# and publishes it to https://logicinczo.github.io/OpenKolam/preview/pr-<N>/
+# on the gh-pages branch, with a bot comment linking it; the preview is
+# removed when the PR closes. The site root (production) is deployed from
+# main by deploy.yml — previews never touch the root.
+#
+# First run bootstraps gh-pages: root seeded from a build of main, so the
+# Pages source switch (to "deploy from branch: gh-pages") never darkens the
+# production site.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pages-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PR_DIR: preview/pr-${{ github.event.pull_request.number }}
+  PREVIEW_URL: https://logicinczo.github.io/OpenKolam/preview/pr-${{ github.event.pull_request.number }}/
+
+jobs:
+  preview:
+    # same-repo branches only: pushing gh-pages from a fork PR would let the
+    # fork's code touch the Pages branch
+    if: github.event.pull_request.head.repo.fork == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect gh-pages branch
+        id: ghp
+        # runs before any checkout — query the repo URL directly (public repo)
+        run: |
+          if git ls-remote --exit-code --heads "https://github.com/${GITHUB_REPOSITORY}.git" gh-pages > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---- cleanup path (PR closed) ----
+      - name: Checkout gh-pages for cleanup
+        if: github.event.action == 'closed' && steps.ghp.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Remove preview and push
+        if: github.event.action == 'closed' && steps.ghp.outputs.exists == 'true'
+        working-directory: site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -rf "$PR_DIR"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "preview: remove $PR_DIR (PR #${{ github.event.pull_request.number }} closed)"
+            git push origin gh-pages
+          else
+            echo "nothing to clean up"
+          fi
+
+      # ---- deploy path (opened / synchronize / reopened) ----
+      - uses: actions/checkout@v4
+        if: github.event.action != 'closed'
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        if: github.event.action != 'closed'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build PR app
+        if: github.event.action != 'closed'
+        run: |
+          npm ci --no-audit
+          npm run build
+
+      # Bootstrap: gh-pages not yet created — seed the root with a build of
+      # main so switching the Pages source to gh-pages keeps the production
+      # URL serving the released app. The orphan branch is staged inside the
+      # main checkout (which carries the persisted token credentials) and
+      # renamed to site/ for the publish step.
+      - name: Checkout main for root bootstrap
+        if: github.event.action != 'closed' && steps.ghp.outputs.exists == 'false'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-src
+
+      - name: Build main and stage gh-pages root (bootstrap)
+        if: github.event.action != 'closed' && steps.ghp.outputs.exists == 'false'
+        working-directory: main-src
+        run: |
+          npm ci --no-audit
+          npm run build
+          # stash the build outside the worktree: `git rm` below deletes the
+          # freshly built tracked files (index.html, style.css) — only the
+          # untracked bundle.js would survive a direct copy-back
+          rm -rf /tmp/ghp-root && mkdir -p /tmp/ghp-root
+          cp -r app/. /tmp/ghp-root/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          git rm -rf --quiet .
+          rm -rf app   # stray untracked build leftover (bundle.js)
+          cp -r /tmp/ghp-root/. .
+          printf 'node_modules/\n*.log\n' > .gitignore
+          touch .nojekyll
+          cd ..
+          mv main-src site
+
+      - name: Checkout existing gh-pages
+        if: github.event.action != 'closed' && steps.ghp.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Publish preview under ${{ env.PR_DIR }}
+        if: github.event.action != 'closed'
+        working-directory: site
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # artifact branch: minimal gitignore only — the app's own one hides bundle.js
+          printf 'node_modules/\n*.log\n' > .gitignore
+          touch .nojekyll
+          rm -rf "$PR_DIR"
+          mkdir -p "$PR_DIR"
+          cp -r ../app/. "$PR_DIR/"
+          git add -A
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "preview already up to date"
+            exit 0
+          fi
+          git commit -m "preview: PR #${PR_NUM} @ ${HEAD_SHA}"
+          ok=0
+          for i in 1 2 3; do
+            if git push origin gh-pages; then ok=1; break; fi
+            echo "push failed (attempt $i); rebasing onto remote gh-pages and retrying"
+            git pull --rebase origin gh-pages || git rebase --abort || true
+            sleep 4
+          done
+          [ "$ok" = 1 ] || { echo "could not push gh-pages after retries"; exit 1; }
+
+      - name: Comment preview URL (once per PR)
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BODY="🔍 **PR preview**: ${PREVIEW_URL} (deployed from ${{ github.event.pull_request.head.sha }}) · _removed automatically when this PR closes_ <!-- kolam-preview -->"
+          existing=$(gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '.[] | select(.body | contains("<!-- kolam-preview -->")) | .id' | head -1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$existing" -f body="$BODY" > /dev/null
+            echo "updated existing preview comment $existing"
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body "$BODY"
+          fi

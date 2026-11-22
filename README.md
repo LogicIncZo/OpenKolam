@@ -16,20 +16,30 @@ this repo is the app around it.
 
 ## Features
 
-- **Infinite canvas**: pan (drag), zoom (wheel), no bounds; kolams are world
-  objects you can move, rotate 90°, mirror, duplicate, delete — with exact
-  undo/redo.
+- **Infinite canvas**: pan (drag or `H`/space), zoom (wheel), zoom-to-fit
+  (`Z`); kolams are world objects with exact undo/redo for every operation.
 - **Idea → Prompt → Draw**: type e.g. `15 pulli dense sikku kolam, 4-fold,
   seed pongal`; the deterministic parser reads grid shape (incl. Tamil
   conventions like `7-1`), symmetry, density, one-stroke vs multi-loop, seed
   and motifs, generates, and places the kolam with a live draw-in animation.
-- **Manual drawing**: drop to the ✱ gate-edit mode, click any channel
-  between two dots of the selected kolam to toggle open/closed; the badge
-  shows `one stroke ✓` or `n loops` live. Manual construction is structured:
-  you cannot break the traditional rules.
+- **Native drawing tools** (tldraw-style, kolam primitives first):
+
+  | tool | key | what it does |
+  |---|---|---|
+  | Select | `V` | click / shift-click / marquee multi-select; drag to move with alignment snapping guides; floating mini-toolbar (rotate, mirror, duplicate, raise/lower, delete); Ctrl+C/Ctrl+V |
+  | Pan | `H` | drag to pan (space holds it temporarily, middle-drag pans in any tool) |
+  | Pulli | `G` | click to place one pulli (grows a draft's lattice, keeps it stationary), drag to sow a rect or diamond dot grid — hand-drawn kolams are just kolams with a `custom` grid |
+  | Gate pen | `P` | sweep through channels between pulli to flip gates **live** — the sikku curve re-traces as you draw and the badge counts loops (flip / paint-open / paint-closed modes) |
+  | Ink | `I` | freehand rice-flour decorations; pure scene ornament, never enters the kolam model |
+  | Eraser | `E` | sweep to erase: drafts lose pulli one by one, generated kolams go whole, strokes vanish |
+
+  Every gesture is a data command with an exact inverse — you cannot break
+  the traditional rules, because every gate configuration is a valid kolam
+  by the permutation model, and all edits round-trip through the dotkolam
+  bridge (`sysFromDoc → mutate → docFromSys`).
 - **Persistence**: autosaves to the browser; save/load `.harness.json`
   scenes; import Kolam-JSON; export per-kolam JSON/SVG/PNG or the whole
-  canvas as SVG.
+  canvas (kolams + ink) as SVG.
 
 ## Quick start
 
@@ -53,9 +63,15 @@ npm run build      # tsc typecheck (src/ + app/ + test/) + esbuild bundle → ap
 npm test           # P8 harness laws: exact undo/redo, round-trips, NaN-free camera
 ```
 
+**Deploy previews per PR**: every pull request builds the app and publishes
+it to `https://logicinczo.github.io/OpenKolam/preview/pr-<N>/` (a bot comment
+links it; removed when the PR closes). Production (the site root) deploys
+from `main` via the same `gh-pages` branch — previews never touch it.
+
 ## Architecture
 
 ```
+ROADMAP.md            release roadmap (v0.0.1 baseline → milestones)
 app/main.ts           DOM app: canvas, tools, prompt form, inspector, persistence
 app/index.html        static chrome (bundle loaded relatively — deployable anywhere)
 src/harness/scene.ts  scene model: kolams on the canvas, camera, placement (pure data, no DOM)
