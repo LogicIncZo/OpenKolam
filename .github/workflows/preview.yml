@@ -101,11 +101,17 @@ jobs:
         run: |
           npm ci --no-audit
           npm run build
+          # stash the build outside the worktree: `git rm` below deletes the
+          # freshly built tracked files (index.html, style.css) — only the
+          # untracked bundle.js would survive a direct copy-back
+          rm -rf /tmp/ghp-root && mkdir -p /tmp/ghp-root
+          cp -r app/. /tmp/ghp-root/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan gh-pages
           git rm -rf --quiet .
-          cp -r app/. .
+          rm -rf app   # stray untracked build leftover (bundle.js)
+          cp -r /tmp/ghp-root/. .
           printf 'node_modules/\n*.log\n' > .gitignore
           touch .nojekyll
           cd ..
