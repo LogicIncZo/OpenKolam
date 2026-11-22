@@ -35,8 +35,9 @@ jobs:
     steps:
       - name: Detect gh-pages branch
         id: ghp
+        # runs before any checkout — query the repo URL directly (public repo)
         run: |
-          if git ls-remote --exit-code --heads origin gh-pages > /dev/null; then
+          if git ls-remote --exit-code --heads "https://github.com/${GITHUB_REPOSITORY}.git" gh-pages > /dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
