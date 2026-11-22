@@ -24,10 +24,7 @@
   </header>
 
   <aside id="tools">
-    <div class="tool-group">
-      <button id="modeSelect" class="tool active" title="Select / move (1)">✥</button>
-      <button id="modeGates" class="tool" title="Edit gates: click between dots (2)">⌗</button>
-    </div>
+    <div class="tool-group" id="toolGroup"><!-- tools injected by main.ts --></div>
     <div class="tool-group">
       <button id="btnUndo" class="tool" title="Undo (Ctrl+Z)">↶</button>
       <button id="btnRedo" class="tool" title="Redo (Ctrl+Shift+Z)">↷</button>
@@ -35,8 +32,8 @@
     <div class="tool-group">
       <button id="btnRotate" class="tool" title="Rotate 90° (R)">⟳</button>
       <button id="btnReflect" class="tool" title="Mirror (F)">⇄</button>
-      <button id="btnDup" class="tool" title="Duplicate (D)">⧉</button>
-      <button id="btnDelete" class="tool danger" title="Delete (Del)">🗑</button>
+      <button id="btnDup" class="tool" title="Duplicate (Ctrl+D)">⧉</button>
+      <button id="btnDelete" class="tool danger" title="Delete selection (Del)">🗑</button>
     </div>
     <div class="tool-group">
       <button id="btnReplay" class="tool" title="Replay drawing animation">▶</button>
@@ -44,11 +41,12 @@
       <button id="btnSmooth" class="tool active" title="Smooth (tangent) geometry">〜</button>
       <button id="btnTheme" class="tool" title="Rice-flour / paper theme">◐</button>
       <button id="btnSnap" class="tool" title="Snap to half-unit grid">⊞</button>
+      <button id="btnFit" class="tool" title="Zoom to fit (Z)">⛶</button>
     </div>
     <div class="tool-group">
       <button id="btnSaveScene" class="tool" title="Save scene (.harness.json)">⬇</button>
       <button id="btnLoadScene" class="tool" title="Load scene">⬆</button>
-      <button id="btnExportScene" class="tool" title="Whole canvas → SVG">⛶</button>
+      <button id="btnExportScene" class="tool" title="Whole canvas → SVG">◍</button>
       <button id="btnImport" class="tool" title="Import Kolam-JSON">＋</button>
       <button id="btnClear" class="tool danger" title="Clear canvas">✕</button>
       <input id="fileInput" type="file" accept=".json" hidden />
@@ -57,6 +55,15 @@
 
   <main id="stage">
     <svg id="canvas"></svg>
+    <div id="toolOptions"></div>
+    <div id="miniToolbar">
+      <button id="mtRotate" title="Rotate 90° (R)">⟳</button>
+      <button id="mtReflect" title="Mirror (F)">⇄</button>
+      <button id="mtDup" title="Duplicate (Ctrl+D)">⧉</button>
+      <button id="mtRaise" title="Raise">⤒</button>
+      <button id="mtLower" title="Lower">⤓</button>
+      <button id="mtDelete" class="danger" title="Delete (Del)">🗑</button>
+    </div>
     <div id="toast"></div>
     <div id="hud">zoom <span id="zoomLabel">1.0×</span> · <span id="countLabel">0 kolams</span></div>
   </main>
