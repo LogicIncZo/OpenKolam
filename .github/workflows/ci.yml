@@ -5,28 +5,21 @@ on:
     branches: [main]
   pull_request:
 
-permissions:
-  contents: read
-  packages: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # NOTE: no `cache: npm` — it requires a committed package-lock.json,
-      # which needs `read:packages` locally to generate. Restore `cache: npm`
-      # + `npm ci` once the lockfile lands.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://npm.pkg.github.com
+          cache: npm
 
-      - name: Install dependencies (@logicinczo/dotkolam from GitHub Packages)
-        run: npm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # @logicinczo/dotkolam resolves as a git dependency (public repo,
+      # SHA-pinned in package.json) — no package-registry auth needed.
+      - name: Install dependencies
+        run: npm ci --no-audit
 
       - name: Typecheck + bundle
         run: npm run build

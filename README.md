@@ -33,21 +33,18 @@ this repo is the app around it.
 
 ## Quick start
 
-The kolam model comes from GitHub Packages, which requires GitHub
-authentication for `npm install` even though the package is public. Set up
-auth once (or create a PAT with `read:packages` and paste it instead):
-
-```bash
-echo "@logicinczo:registry=https://npm.pkg.github.com" >> ~/.npmrc
-echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc
-```
-
-Then:
-
 ```bash
 npm install
 npm run serve      # → http://127.0.0.1:4173/app/
 ```
+
+No registry auth needed: the `@logicinczo/dotkolam` dependency resolves as a
+**git dependency** on the public
+[dotkolam](https://github.com/LogicIncZo/dotkolam) repo (SHA-pinned in
+`package.json`; npm runs its `prepare` build on install). The same package is
+also published to GitHub Packages
+([`@logicinczo/dotkolam`](https://github.com/LogicIncZo/dotkolam/pkgs/npm/%40logicinczo%2Fdotkolam))
+for registry-style installs.
 
 Development:
 
@@ -55,9 +52,6 @@ Development:
 npm run build      # tsc typecheck (src/ + app/ + test/) + esbuild bundle → app/bundle.js
 npm test           # P8 harness laws: exact undo/redo, round-trips, NaN-free camera
 ```
-
-CI installs the package automatically with the built-in `GITHUB_TOKEN`
-(`packages: read`), so no secrets are needed for GitHub Actions.
 
 ## Architecture
 

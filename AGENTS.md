@@ -4,9 +4,11 @@ OpenKolam (the **Kolam Harness**): an offline infinite-canvas web app for
 rule-bound **sikku kolam** — Idea → Prompt → Draw plus manual gate editing.
 The kolam model (grid, gates, trace, validator, generator, prompt parser,
 renderer) is **not implemented here**: it comes from the
-[`@logicinczo/dotkolam`](https://github.com/LogicIncZo/dotkolam) package on
-GitHub Packages (spec + reference implementation). This repo is the app
-around it. Start from `README.md`.
+[`@logicinczo/dotkolam`](https://github.com/LogicIncZo/dotkolam) package —
+consumed as a **git dependency** on the public dotkolam repo, SHA-pinned in
+`package.json` (npm runs the dep's `prepare` build on install; the same
+package is also published to GitHub Packages). This repo is the app around
+it. Start from `README.md`.
 
 ## Hard invariants (breaking any of these is a bug, not a design change)
 
@@ -25,8 +27,10 @@ around it. Start from `README.md`.
    the package doesn't expose, extend `dotkolam` (browser-safe barrel
    `src/index.ts`) and bump the dependency version here.
 4. **Zero runtime dependencies besides `@logicinczo/dotkolam`.** `dependencies`
-   stays `{"@logicinczo/dotkolam": …}`. Dev deps are tooling only
-   (typescript, tsx, esbuild, @types/node).
+   stays `{"@logicinczo/dotkolam": …}` (git dependency, SHA-pinned — bump the
+   SHA in `package.json` **and** run `npm install` to refresh
+   `package-lock.json` together). Dev deps are tooling only (typescript, tsx,
+   esbuild, @types/node).
 5. **Strict TypeScript everywhere.** `strict`, `noUncheckedIndexedAccess`,
    `exactOptionalPropertyTypes` are on (see `tsconfig.json`), and the tsc
    pass covers `src/`, `app/`, and `test/` — `app/main.ts` is typechecked,
@@ -39,14 +43,13 @@ around it. Start from `README.md`.
 Node 22 (CI), ESM everywhere. From the repo root:
 
 ```bash
-npm install                      # @logicinczo/dotkolam + dev tooling (needs GitHub Packages auth; see README)
+npm install                      # @logicinczo/dotkolam (git dep, public clone) + dev tooling
 npm run build                    # tsc typecheck + esbuild bundle → app/bundle.js
 npm test                         # P8 harness-law suite
 npm run serve                    # http://127.0.0.1:4173/app/
 ```
 
-Full CI parity: `npm run build && npm test` (see `.github/workflows/ci.yml`;
-CI authenticates to GitHub Packages with the built-in `GITHUB_TOKEN`).
+Full CI parity: `npm run build && npm test` (see `.github/workflows/ci.yml`).
 
 ## Change protocol
 
