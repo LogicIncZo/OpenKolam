@@ -25,7 +25,7 @@
     "serve": "node scripts/serve.mjs"
   },
   "dependencies": {
-    "@logicinczo/dotkolam": "github:LogicIncZo/dotkolam#45973e425982b83b7bc3da3e42ad86216d5a1add"
+    "@logicinczo/dotkolam": "github:LogicIncZo/dotkolam#b47171e5813b15c75396df7e93415e2e4f702ddd"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
