@@ -63,6 +63,11 @@ npm run build      # tsc typecheck (src/ + app/ + test/) + esbuild bundle → ap
 npm test           # P8 harness laws: exact undo/redo, round-trips, NaN-free camera
 ```
 
+**Deploy previews per PR**: every pull request builds the app and publishes
+it to `https://logicinczo.github.io/OpenKolam/preview/pr-<N>/` (a bot comment
+links it; removed when the PR closes). Production (the site root) deploys
+from `main` via the same `gh-pages` branch — previews never touch it.
+
 ## Architecture
 
 ```
