@@ -1,24 +1,28 @@
 name: Deploy (GitHub Pages)
 
+# Production deploy: the built app goes to the ROOT of the gh-pages branch
+# (Pages source = "deploy from branch: gh-pages / (root)"). Per-PR previews
+# live under preview/pr-<N>/ (preview.yml) and are preserved by this deploy.
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-root
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
@@ -31,16 +35,69 @@ jobs:
       # app = infinite canvas (index.html + style.css + bundled main.ts)
       - run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: app
+      - name: Detect gh-pages branch
+        id: ghp
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # gh-pages missing (fresh repo): stage the root from this main build as
+      # an orphan branch, so Pages never points at an empty site.
+      - name: Stage gh-pages root (bootstrap)
+        if: steps.ghp.outputs.exists == 'false'
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # stash the build outside the worktree: `git rm` below deletes the
+          # freshly built tracked files (index.html, style.css)
+          rm -rf /tmp/ghp-root && mkdir -p /tmp/ghp-root
+          cp -r app/. /tmp/ghp-root/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          git rm -rf --quiet .
+          rm -rf app   # stray untracked build leftover (bundle.js)
+          cp -r /tmp/ghp-root/. .
+          printf 'node_modules/\n*.log\n' > .gitignore
+          touch .nojekyll
+          git add -A
+          git commit -m "deploy: site root from main @ ${SHA}"
+          git push -u origin gh-pages
+
+      - name: Checkout existing gh-pages
+        if: steps.ghp.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Update site root (preserving previews)
+        if: steps.ghp.outputs.exists == 'true'
+        working-directory: site
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf 'node_modules/\n*.log\n' > .gitignore
+          touch .nojekyll
+          cp -r ../app/. .
+          git add -A
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "site root already up to date"
+            exit 0
+          fi
+          git commit -m "deploy: site root from main @ ${SHA}"
+          ok=0
+          for i in 1 2 3; do
+            if git push origin gh-pages; then ok=1; break; fi
+            echo "push failed (attempt $i); rebasing onto remote gh-pages and retrying"
+            git pull --rebase origin gh-pages || git rebase --abort || true
+            sleep 4
+          done
+          [ "$ok" = 1 ] || { echo "could not push gh-pages after retries"; exit 1; }
