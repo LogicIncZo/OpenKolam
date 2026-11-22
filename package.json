@@ -1,6 +1,6 @@
 {
   "name": "openkolam",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "OpenKolam (Kolam Harness): an offline infinite-canvas web app for rule-bound sikku kolam — Idea → Prompt → Draw, manual gate editing, exact undo/redo — powered by the dotkolam reference implementation.",
   "type": "module",
   "license": "MIT",
