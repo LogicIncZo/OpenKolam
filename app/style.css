@@ -53,9 +53,12 @@ button.danger:hover { border-color: var(--danger); color: var(--danger); }
 /* stage */
 #stage { grid-area: stage; position: relative; overflow: hidden; background:
   radial-gradient(1200px 800px at 60% 40%, rgba(255,255,255,0.035), rgba(0,0,0,0.12)), var(--ground); }
-#canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
-#canvas.panning { cursor: grabbing; }
-#canvas.mode-gates { cursor: crosshair; }
+#canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+#canvas.cursor-select { cursor: default; }
+#canvas.cursor-hand { cursor: grab; }
+#canvas.cursor-dot, #canvas.cursor-pen { cursor: crosshair; }
+#canvas.cursor-ink { cursor: crosshair; }
+#canvas.cursor-eraser { cursor: cell; }
 #hud { position: absolute; left: 10px; bottom: 8px; font-size: 12px; color: var(--ink-dim);
        pointer-events: none; }
 #toast { position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
@@ -63,6 +66,30 @@ button.danger:hover { border-color: var(--danger); color: var(--danger); }
          border-radius: 10px; padding: 8px 14px; opacity: 0; transition: opacity 0.25s;
          pointer-events: none; max-width: 70%; font-size: 13px; }
 #toast.show { opacity: 1; }
+
+/* tool options bar (bottom-center of the stage) */
+#toolOptions { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+               display: flex; align-items: center; gap: 10px; background: var(--panel);
+               border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px;
+               font-size: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
+#toolOptions .opt-label { color: var(--ink-dim); letter-spacing: 0.04em; }
+#toolOptions .opt-hint { color: var(--ink-dim); opacity: 0.8; }
+#toolOptions .seg { display: flex; gap: 2px; }
+#toolOptions .seg button { padding: 3px 9px; font-size: 12px; border-radius: 6px; }
+#toolOptions .colors { gap: 5px; }
+#toolOptions .swatch { width: 20px; height: 20px; padding: 0; border-radius: 50%;
+                       border: 2px solid var(--line); }
+#toolOptions .swatch.active { border-color: var(--accent); }
+
+/* floating mini toolbar over the selection */
+#miniToolbar { position: absolute; display: none; gap: 3px; background: var(--panel);
+               border: 1px solid var(--line); border-radius: 9px; padding: 4px;
+               box-shadow: 0 4px 18px rgba(0,0,0,0.35); z-index: 5; }
+#miniToolbar button { width: 30px; height: 30px; padding: 0; font-size: 14px; border-radius: 7px; }
+
+/* canvas layers */
+#world .kolam .curves path { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+#world polyline.ink { pointer-events: none; }
 
 /* inspector */
 #inspector { grid-area: insp; background: var(--panel); border-left: 1px solid var(--line);
@@ -87,14 +114,3 @@ details summary { cursor: pointer; color: var(--ink-dim); font-size: 13px; }
             border-radius: 8px; padding: 8px; font: 11px/1.4 ui-monospace, monospace; color: var(--ink-dim); }
 .prompt-echo { margin-top: 14px; font-size: 12px; color: var(--ink-dim); }
 .prompt-echo b { color: var(--accent2); }
-
-/* canvas kolam groups */
-.kolam { cursor: pointer; }
-.kolam.selected .outline { stroke: var(--accent); }
-.kolam .curves path { stroke-linecap: round; stroke-linejoin: round; fill: none; }
-.kolam .gates line { stroke: transparent; stroke-width: 0.55; cursor: pointer; }
-.mode-gates .kolam.selected .gates line { stroke-width: 0.5; }
-.kolam .gates line.open { stroke: rgba(126, 200, 169, 0.55); }
-.kolam .gates line.closed { stroke: rgba(224, 120, 86, 0.5); }
-.kolam .gates line:hover { stroke: #fff; }
-body.light .kolam .gates line:hover { stroke: #000; }
