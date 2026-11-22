@@ -15,16 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # NOTE: no `cache: npm` — it requires a committed package-lock.json,
+      # which needs `read:packages` locally to generate. Restore `cache: npm`
+      # + `npm ci` once the lockfile lands.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
           registry-url: https://npm.pkg.github.com
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies (@logicinczo/dotkolam from GitHub Packages)
-        run: npm ci
+        run: npm install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
