@@ -71,6 +71,7 @@ from `main` via the same `gh-pages` branch — previews never touch it.
 ## Architecture
 
 ```
+ROADMAP.md            release roadmap (v0.0.1 baseline → milestones)
 app/main.ts           DOM app: canvas, tools, prompt form, inspector, persistence
 app/index.html        static chrome (bundle loaded relatively — deployable anywhere)
 src/harness/scene.ts  scene model: kolams on the canvas, camera, placement (pure data, no DOM)
